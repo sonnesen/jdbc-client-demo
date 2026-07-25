@@ -3,13 +3,14 @@ package com.sonnesen.jdbc_client_demo.customer.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 
+import com.sonnesen.jdbc_client_demo.customer.exception.CustomerAlreadyExistsWithEmailException;
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerNotFoundException;
 import com.sonnesen.jdbc_client_demo.customer.model.Customer;
 
@@ -51,20 +52,25 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public Customer create(Customer customer) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        try {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        String sql = "INSERT INTO customers (name, email) VALUES (:name, :email)";
-        int update = jdbcClient.sql(sql)
-                .param("name", customer.name())
-                .param("email", customer.email())
-                .update(keyHolder);
+            String sql = "INSERT INTO customers (name, email) VALUES (:name, :email)";
+            jdbcClient.sql(sql)
+                    .param("name", customer.name())
+                    .param("email", customer.email())
+                    .update(keyHolder);
 
-        Assert.state(update > 0, "Failed to create customer");
+            Long generatedId = keyHolder.getKey().longValue();
+            customer = customer.withId(generatedId);
 
-        Long generatedId = keyHolder.getKey().longValue();
-        customer = customer.withId(generatedId);
-
-        return customer;
+            return customer;
+        } catch (Exception ex) {
+            if (ex instanceof DuplicateKeyException) {
+                throw new CustomerAlreadyExistsWithEmailException(customer.email());
+            }
+            throw ex;
+        }
     }
 
     @Override

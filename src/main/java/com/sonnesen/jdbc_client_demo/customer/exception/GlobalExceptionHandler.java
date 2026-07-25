@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,9 +28,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
-        if (isDuplicateKeyException(ex)) {
-            return handleDuplicateKeyException(ex, request);
-        }
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("Data Integrity Violation");
         problemDetail.setInstance(URI.create(request.getRequestURI()));
@@ -39,18 +35,15 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    private ProblemDetail handleDuplicateKeyException(DataIntegrityViolationException ex, HttpServletRequest request) {
+    @ExceptionHandler(CustomerAlreadyExistsWithEmailException.class)
+    public ProblemDetail handleCustomerAlreadyExistsWithEmailException(CustomerAlreadyExistsWithEmailException ex, HttpServletRequest request) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("E-mail already exists");
         problemDetail.setInstance(URI.create(request.getRequestURI()));
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
     }
-
-    private boolean isDuplicateKeyException(DataIntegrityViolationException ex) {
-        return ex.getCause() instanceof DuplicateKeyException;
-    }
-
+    
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream().map(this::formatFieldError).toList();
@@ -74,12 +67,6 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    private String formatConstraintViolation(ConstraintViolation<?> violation) {
-        String path = violation.getPropertyPath().toString();
-        String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
-        return field + ": " + violation.getMessage();
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -88,6 +75,12 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
     }
+
+    private String formatConstraintViolation(ConstraintViolation<?> violation) {
+        String path = violation.getPropertyPath().toString();
+        String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+        return field + ": " + violation.getMessage();
+    }    
 
     private String formatFieldError(org.springframework.validation.FieldError fieldError) {
         return fieldError.getField() + ": " + fieldError.getDefaultMessage();

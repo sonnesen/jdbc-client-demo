@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
 
+import com.sonnesen.jdbc_client_demo.customer.exception.CustomerAlreadyExistsWithEmailException;
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerNotFoundException;
 import com.sonnesen.jdbc_client_demo.customer.model.Customer;
 
@@ -31,9 +31,9 @@ class JdbcCustomerRepositoryTest {
     }
 
     @Test
-    void create_throwsDataIntegrityViolationException_onDuplicateEmail() {
+    void create_throwsCustomerAlreadyExistsWithEmailException_onDuplicateEmail() {
         assertThatThrownBy(() -> customerRepository.create(Customer.newCustomer("Duplicate", "john.doe@mail.com")))
-                .isInstanceOf(DataIntegrityViolationException.class);
+                .isInstanceOf(CustomerAlreadyExistsWithEmailException.class);
     }
 
     @Test
