@@ -1,0 +1,50 @@
+### Get all customers
+GET http://localhost:8080/v1/customers 
+
+### Create a new customer
+POST http://localhost:8080/v1/customers
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com"
+}
+
+### Create another customer
+POST http://localhost:8080/v1/customers
+Content-Type: application/json
+
+{
+  "name": "John Smith",
+  "email": "john.smith@mail.com"
+}
+
+### Get a customer by ID
+GET http://localhost:8080/v1/customers/1
+
+### Update a customer by ID
+PUT http://localhost:8080/v1/customers/1
+Content-Type: application/json
+
+{
+  "name": "John Doe Updated",
+  "email": "john.doe.updated@example.com"
+}
+
+### Delete a customer by ID
+DELETE http://localhost:8080/v1/customers/1
+
+### Get all customers after deletion
+GET http://localhost:8080/v1/customers
+
+### Get a customer by ID that does not exist
+GET http://localhost:8080/v1/customers/999
+
+### Create a customer with non unique email
+POST http://localhost:8080/v1/customers
+Content-Type: application/json
+
+{
+  "name": "Duplicate Email",
+  "email": "john.doe@mail.com"
+}
