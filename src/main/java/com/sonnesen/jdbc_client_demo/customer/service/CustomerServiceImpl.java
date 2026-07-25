@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.sonnesen.jdbc_client_demo.common.dto.PageResponse;
 import com.sonnesen.jdbc_client_demo.customer.dto.request.CreateCustomerRequest;
 import com.sonnesen.jdbc_client_demo.customer.dto.request.UpdateCustomerRequest;
 import com.sonnesen.jdbc_client_demo.customer.dto.response.CustomerResponse;
@@ -33,11 +34,13 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public List<CustomerResponse> findAll(int page, int size) {
+    public PageResponse<CustomerResponse> findAll(int page, int size) {
         List<Customer> customers = customerRepository.findAll(page, size);
-        return customers.stream()
+        long totalElements = customerRepository.countAll();
+        List<CustomerResponse> content = customers.stream()
                 .map(CustomerResponse::from)
                 .toList();
+        return PageResponse.of(content, page, size, totalElements);
     }
 
     @Override

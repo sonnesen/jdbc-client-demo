@@ -1,7 +1,5 @@
 package com.sonnesen.jdbc_client_demo.customer.controller;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sonnesen.jdbc_client_demo.common.dto.PageResponse;
 import com.sonnesen.jdbc_client_demo.customer.dto.request.CreateCustomerRequest;
 import com.sonnesen.jdbc_client_demo.customer.dto.request.UpdateCustomerRequest;
 import com.sonnesen.jdbc_client_demo.customer.dto.response.CustomerResponse;
@@ -37,14 +36,14 @@ public class CustomerController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CustomerResponse> findAll(@RequestParam(defaultValue = "1") @Min(1) int page,
+    public PageResponse<CustomerResponse> findAll(@RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         return customerService.findAll(page, size);
     }
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public CustomerResponse findById(@PathVariable Long id) {
+    public CustomerResponse findById(@PathVariable @Min(1) Long id) {
         return customerService.findById(id);
     }
 
@@ -56,13 +55,13 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public CustomerResponse update(@PathVariable Long id, @Valid @RequestBody UpdateCustomerRequest request) {
+    public CustomerResponse update(@PathVariable @Min(1) Long id, @Valid @RequestBody UpdateCustomerRequest request) {
         return customerService.update(id, request);
     }
-    
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable Long id) {
+    public void deleteById(@PathVariable @Min(1) Long id) {
         customerService.deleteById(id);
     }
 

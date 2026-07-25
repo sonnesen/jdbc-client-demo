@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -45,10 +48,7 @@ public class GlobalExceptionHandler {
     }
 
     private boolean isDuplicateKeyException(DataIntegrityViolationException ex) {
-        if (ex.getCause() instanceof org.springframework.dao.DuplicateKeyException) {
-            return true;
-        }
-        return false;
+        return ex.getCause() instanceof DuplicateKeyException;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -61,6 +61,23 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("errors", errors);
         return problemDetail;
 
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintViolationException(ConstraintViolationException ex, HttpServletRequest request) {
+        List<String> errors = ex.getConstraintViolations().stream().map(this::formatConstraintViolation).toList();
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request has invalid parameters.");
+        problemDetail.setTitle("Validation Failed");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("errors", errors);
+        return problemDetail;
+    }
+
+    private String formatConstraintViolation(ConstraintViolation<?> violation) {
+        String path = violation.getPropertyPath().toString();
+        String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+        return field + ": " + violation.getMessage();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

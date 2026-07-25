@@ -9,6 +9,8 @@ public interface CustomerRepository {
 
     List<Customer> findAll(int page, int size);
 
+    long countAll();
+
     Optional<Customer> findById(Long id);
 
     Customer create(Customer customer);

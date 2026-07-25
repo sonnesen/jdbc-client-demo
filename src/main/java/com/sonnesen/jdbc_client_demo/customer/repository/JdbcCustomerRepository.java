@@ -37,6 +37,13 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Transactional(readOnly = true)
     @Override
+    public long countAll() {
+        String sql = "SELECT COUNT(*) FROM customers";
+        return jdbcClient.sql(sql).query(Long.class).single();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public Optional<Customer> findById(Long id) {
         String sql = "SELECT * FROM customers WHERE id = :id";
         return jdbcClient.sql(sql).param("id", id).query(Customer.class).optional();

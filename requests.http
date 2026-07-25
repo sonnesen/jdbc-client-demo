@@ -1,5 +1,5 @@
-### Get all customers
-GET http://localhost:8080/v1/customers 
+### Get all customers (paginated response: content, page, size, totalElements, totalPages)
+GET http://localhost:8080/v1/customers
 
 ### Create a new customer
 POST http://localhost:8080/v1/customers
@@ -48,3 +48,6 @@ Content-Type: application/json
   "name": "Duplicate Email",
   "email": "john.doe@mail.com"
 }
+
+### Get a customer by an invalid (non-positive) ID
+GET http://localhost:8080/v1/customers/0
