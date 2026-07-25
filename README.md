@@ -44,6 +44,13 @@ Base path: `/v1/customers`. See `requests.http` for ready-to-run sample requests
 
 Validation failures (blank/invalid fields, out-of-range `id`/`page`/`size`) return `400` with a `ProblemDetail` body listing the offending fields under `errors`.
 
+## API documentation (OpenAPI / Swagger UI)
+
+With the app running, the API is documented using [springdoc-openapi](https://springdoc.org/):
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Raw OpenAPI spec (JSON): `http://localhost:8080/v3/api-docs`
+
 ## H2 console
 
 With the app running, open `http://localhost:8080/h2-console` and connect with:
