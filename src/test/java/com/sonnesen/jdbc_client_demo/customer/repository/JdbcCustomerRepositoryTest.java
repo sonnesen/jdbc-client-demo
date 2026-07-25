@@ -79,6 +79,15 @@ class JdbcCustomerRepositoryTest {
     }
 
     @Test
+    void update_throwsCustomerAlreadyExistsWithEmailException_onDuplicateEmail() {
+        Customer created = customerRepository.create(Customer.newCustomer("Jane Doe", "jane.doe@example.com"));
+
+        assertThatThrownBy(() -> customerRepository.update(created.id(),
+                new Customer(created.id(), "Jane Doe", "john.doe@mail.com")))
+                .isInstanceOf(CustomerAlreadyExistsWithEmailException.class);
+    }
+
+    @Test
     void deleteById_removesCustomer() {
         Customer created = customerRepository.create(Customer.newCustomer("Jane Doe", "jane.doe@example.com"));
 

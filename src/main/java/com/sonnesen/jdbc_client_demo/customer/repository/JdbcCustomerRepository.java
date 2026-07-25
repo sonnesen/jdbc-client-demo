@@ -75,15 +75,21 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public void update(Long id, Customer customer) {
-        String sql = "UPDATE customers SET name = :name, email = :email WHERE id = :id";
-        int update = jdbcClient.sql(sql)
+        try {
+            String sql = "UPDATE customers SET name = :name, email = :email WHERE id = :id";
+            int update = jdbcClient.sql(sql)
                 .param("name", customer.name())
                 .param("email", customer.email())
                 .param("id", id)
                 .update();
-
-        if (update == 0) {
-            throw new CustomerNotFoundException(id);
+            if (update == 0) {
+                throw new CustomerNotFoundException(id);
+            }
+        } catch (Exception ex) {
+            if (ex instanceof DuplicateKeyException) {
+                throw new CustomerAlreadyExistsWithEmailException(customer.email());
+            }
+            throw ex;
         }
     }
 

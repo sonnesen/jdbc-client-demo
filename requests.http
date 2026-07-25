@@ -1,8 +1,47 @@
-### Get all customers (paginated response: content, page, size, totalElements, totalPages)
-GET http://localhost:8080/v1/customers
+@baseUrl = http://localhost:8080/v1/customers
+
+###############################################################################
+# Seed data (db/data.sql): id=1, name="John Doe", email="john.doe@mail.com"
+###############################################################################
+
+###############################################################################
+# GET /v1/customers — list (success)
+###############################################################################
+
+### List customers with default pagination (page=1, size=10)
+GET {{baseUrl}}
+
+### List customers with explicit pagination
+GET {{baseUrl}}?page=1&size=5
+
+### List customers with max allowed size
+GET {{baseUrl}}?page=1&size=100
+
+###############################################################################
+# GET /v1/customers — list (failure: 400 invalid pagination params)
+###############################################################################
+
+### Fail: page below minimum (page must be >= 1)
+GET {{baseUrl}}?page=0
+
+### Fail: negative page
+GET {{baseUrl}}?page=-1
+
+### Fail: size below minimum (size must be >= 1)
+GET {{baseUrl}}?size=0
+
+### Fail: size above maximum (size must be <= 100)
+GET {{baseUrl}}?size=101
+
+### Fail: non-numeric page (Spring default error response, not ProblemDetail)
+GET {{baseUrl}}?page=abc
+
+###############################################################################
+# POST /v1/customers — create (success)
+###############################################################################
 
 ### Create a new customer
-POST http://localhost:8080/v1/customers
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -11,7 +50,7 @@ Content-Type: application/json
 }
 
 ### Create another customer
-POST http://localhost:8080/v1/customers
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -19,29 +58,81 @@ Content-Type: application/json
   "email": "john.smith@mail.com"
 }
 
-### Get a customer by ID
-GET http://localhost:8080/v1/customers/1
+###############################################################################
+# POST /v1/customers — create (failure: 400 validation)
+###############################################################################
 
-### Update a customer by ID
-PUT http://localhost:8080/v1/customers/1
+### Fail: blank name
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-  "name": "John Doe Updated",
-  "email": "john.doe.updated@example.com"
+  "name": "",
+  "email": "blank.name@example.com"
 }
 
-### Delete a customer by ID
-DELETE http://localhost:8080/v1/customers/1
+### Fail: missing name field entirely
+POST {{baseUrl}}
+Content-Type: application/json
 
-### Get all customers after deletion
-GET http://localhost:8080/v1/customers
+{
+  "email": "missing.name@example.com"
+}
 
-### Get a customer by ID that does not exist
-GET http://localhost:8080/v1/customers/999
+### Fail: blank email
+POST {{baseUrl}}
+Content-Type: application/json
 
-### Create a customer with non unique email
-POST http://localhost:8080/v1/customers
+{
+  "name": "No Email",
+  "email": ""
+}
+
+### Fail: invalid email format
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Bad Email",
+  "email": "not-an-email"
+}
+
+### Fail: name exceeds max length (256 chars)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "email": "long.name@example.com"
+}
+
+### Fail: email exceeds max length (256 chars local part)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Long Email",
+  "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com"
+}
+
+### Fail: empty request body
+POST {{baseUrl}}
+Content-Type: application/json
+
+{}
+
+### Fail: malformed JSON body
+POST {{baseUrl}}
+Content-Type: application/json
+
+{ "name": "Broken JSON", "email": }
+
+###############################################################################
+# POST /v1/customers — create (failure: 409 duplicate email)
+###############################################################################
+
+### Fail: email already exists (seeded customer john.doe@mail.com)
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -49,5 +140,127 @@ Content-Type: application/json
   "email": "john.doe@mail.com"
 }
 
-### Get a customer by an invalid (non-positive) ID
-GET http://localhost:8080/v1/customers/0
+###############################################################################
+# GET /v1/customers/{id} — get by id (success)
+###############################################################################
+
+### Get seeded customer by id
+GET {{baseUrl}}/1
+
+###############################################################################
+# GET /v1/customers/{id} — get by id (failure)
+###############################################################################
+
+### Fail: 404 customer id does not exist
+GET {{baseUrl}}/999
+
+### Fail: 400 id is zero (must be >= 1)
+GET {{baseUrl}}/0
+
+### Fail: 400 negative id
+GET {{baseUrl}}/-1
+
+### Fail: non-numeric id (Spring default error response, not ProblemDetail)
+GET {{baseUrl}}/abc
+
+###############################################################################
+# PUT /v1/customers/{id} — update (success)
+###############################################################################
+
+### Update seeded customer
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "name": "John Doe Updated",
+  "email": "john.doe.updated@example.com"
+}
+
+###############################################################################
+# PUT /v1/customers/{id} — update (failure: 400 validation)
+###############################################################################
+
+### Fail: blank name on update
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "valid@example.com"
+}
+
+### Fail: invalid email format on update
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "name": "Valid Name",
+  "email": "not-an-email"
+}
+
+### Fail: 400 id is zero on update (validated before body)
+PUT {{baseUrl}}/0
+Content-Type: application/json
+
+{
+  "name": "Doesn't Matter",
+  "email": "doesnt.matter@example.com"
+}
+
+###############################################################################
+# PUT /v1/customers/{id} — update (failure: 404 not found)
+###############################################################################
+
+### Fail: update a customer id that does not exist
+PUT {{baseUrl}}/999
+Content-Type: application/json
+
+{
+  "name": "Ghost",
+  "email": "ghost@example.com"
+}
+
+###############################################################################
+# PUT /v1/customers/{id} — update (failure: 409 email collision)
+###############################################################################
+
+### Setup: create a second customer to collide with
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Collision Target",
+  "email": "collision.target@example.com"
+}
+
+### Fail: update customer 1's email to an email owned by another customer
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "name": "John Doe Updated",
+  "email": "collision.target@example.com"
+}
+
+###############################################################################
+# DELETE /v1/customers/{id} — delete (success)
+###############################################################################
+
+### Delete seeded customer
+DELETE {{baseUrl}}/1
+
+### Confirm deletion: list should no longer contain id 1
+GET {{baseUrl}}
+
+###############################################################################
+# DELETE /v1/customers/{id} — delete (failure)
+###############################################################################
+
+### Fail: 404 delete a customer id that does not exist / already deleted
+DELETE {{baseUrl}}/1
+
+### Fail: 400 delete with id zero
+DELETE {{baseUrl}}/0
+
+### Fail: 400 delete with negative id
+DELETE {{baseUrl}}/-5
