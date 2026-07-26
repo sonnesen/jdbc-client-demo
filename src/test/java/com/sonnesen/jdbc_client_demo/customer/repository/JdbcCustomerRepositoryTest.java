@@ -6,10 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerAlreadyExistsWithEmailException;
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerNotFoundException;
@@ -17,10 +19,19 @@ import com.sonnesen.jdbc_client_demo.customer.model.Customer;
 
 @JdbcTest
 @Import(JdbcCustomerRepository.class)
+@ActiveProfiles("test")
 class JdbcCustomerRepositoryTest {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @BeforeEach
+    void setUp() {
+        // Clean up the database before each test
+        customerRepository.findAll(1, Integer.MAX_VALUE).forEach(customer -> customerRepository.deleteById(customer.id()));
+        // Insert a sample customer for testing
+        customerRepository.create(Customer.newCustomer("John Doe", "john.doe@mail.com"));
+    }
 
     @Test
     void create_generatesIdAndPersistsCustomer() {
@@ -32,7 +43,8 @@ class JdbcCustomerRepositoryTest {
 
     @Test
     void create_throwsCustomerAlreadyExistsWithEmailException_onDuplicateEmail() {
-        assertThatThrownBy(() -> customerRepository.create(Customer.newCustomer("Duplicate", "john.doe@mail.com")))
+        Customer duplicate = Customer.newCustomer("Duplicate", "john.doe@mail.com");
+        assertThatThrownBy(() -> customerRepository.create(duplicate))
                 .isInstanceOf(CustomerAlreadyExistsWithEmailException.class);
     }
 
@@ -74,31 +86,35 @@ class JdbcCustomerRepositoryTest {
 
     @Test
     void update_throwsCustomerNotFoundException_whenMissing() {
-        assertThatThrownBy(() -> customerRepository.update(999L, new Customer(999L, "Ghost", "ghost@example.com")))
+        Customer customer = new Customer(999L, "Ghost", "ghost@example.com");
+        assertThatThrownBy(() -> customerRepository.update(999L, customer))
                 .isInstanceOf(CustomerNotFoundException.class);
     }
 
     @Test
     void update_throwsCustomerAlreadyExistsWithEmailException_onDuplicateEmail() {
         Customer created = customerRepository.create(Customer.newCustomer("Jane Doe", "jane.doe@example.com"));
+        Customer updateCustomer = new Customer(created.id(), "Jane Doe", "john.doe@mail.com");
+        long customerId = created.id();
 
-        assertThatThrownBy(() -> customerRepository.update(created.id(),
-                new Customer(created.id(), "Jane Doe", "john.doe@mail.com")))
+        assertThatThrownBy(() -> customerRepository.update(customerId, updateCustomer))
                 .isInstanceOf(CustomerAlreadyExistsWithEmailException.class);
     }
 
     @Test
     void deleteById_removesCustomer() {
         Customer created = customerRepository.create(Customer.newCustomer("Jane Doe", "jane.doe@example.com"));
+        long customerId = created.id();
 
-        customerRepository.deleteById(created.id());
+        customerRepository.deleteById(customerId);
 
-        assertThat(customerRepository.findById(created.id())).isEmpty();
+        assertThat(customerRepository.findById(customerId)).isEmpty();
     }
 
     @Test
     void deleteById_throwsCustomerNotFoundException_whenMissing() {
-        assertThatThrownBy(() -> customerRepository.deleteById(999L))
+        long missingId = 999L;
+        assertThatThrownBy(() -> customerRepository.deleteById(missingId))
                 .isInstanceOf(CustomerNotFoundException.class);
     }
 }
