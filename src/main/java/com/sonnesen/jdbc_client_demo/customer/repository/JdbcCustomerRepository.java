@@ -40,7 +40,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
     @Override
     public long countAll() {
         String sql = "SELECT COUNT(*) FROM customers";
-        return jdbcClient.sql(sql).query(Long.class).single();
+        Long count = jdbcClient.sql(sql).query(Long.class).single();
+        return count != null ? count : 0L;
     }
 
     @Transactional(readOnly = true)
@@ -59,18 +60,23 @@ public class JdbcCustomerRepository implements CustomerRepository {
             jdbcClient.sql(sql)
                     .param("name", customer.name())
                     .param("email", customer.email())
-                    .update(keyHolder);
+                    .update(keyHolder, "id");
 
-            Long generatedId = keyHolder.getKey().longValue();
+            Long generatedId = getKeyFromKeyHolder(keyHolder).longValue();
             customer = customer.withId(generatedId);
 
             return customer;
-        } catch (Exception ex) {
-            if (ex instanceof DuplicateKeyException) {
-                throw new CustomerAlreadyExistsWithEmailException(customer.email());
-            }
-            throw ex;
+        } catch (DuplicateKeyException _) {
+            throw new CustomerAlreadyExistsWithEmailException(customer.email());
         }
+    }
+
+    private Number getKeyFromKeyHolder(KeyHolder keyHolder) {
+        Number generatedKey = keyHolder.getKey();
+        if (generatedKey == null) {
+            throw new IllegalStateException("Failed to retrieve generated key from KeyHolder");
+        }
+        return generatedKey;
     }
 
     @Override
@@ -85,11 +91,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
             if (update == 0) {
                 throw new CustomerNotFoundException(id);
             }
-        } catch (Exception ex) {
-            if (ex instanceof DuplicateKeyException) {
-                throw new CustomerAlreadyExistsWithEmailException(customer.email());
-            }
-            throw ex;
+        } catch (DuplicateKeyException _) {
+            throw new CustomerAlreadyExistsWithEmailException(customer.email());
         }
     }
 

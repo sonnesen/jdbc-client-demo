@@ -1,6 +1,6 @@
 # jdbc-client-demo
 
-A small Spring Boot 4.1 demo showcasing the `JdbcClient` API (the modern replacement for `JdbcTemplate`/`NamedParameterJdbcTemplate`) through a CRUD REST API for a `Customer` entity, backed by an in-memory H2 database.
+A small Spring Boot 4.1 demo showcasing the `JdbcClient` API (the modern replacement for `JdbcTemplate`/`NamedParameterJdbcTemplate`) through a CRUD REST API for a `Customer` entity, backed by PostgreSQL.
 
 ## What it demonstrates
 
@@ -14,6 +14,7 @@ A small Spring Boot 4.1 demo showcasing the `JdbcClient` API (the modern replace
 
 - Java 25
 - No local Maven install needed — use the bundled wrapper (`./mvnw`).
+- Docker (running locally) — used both by `spring-boot-docker-compose` to start Postgres for `spring-boot:run`, and by Testcontainers to spin up a real Postgres instance for the test suite.
 
 ## Running the app
 
@@ -29,7 +30,9 @@ The API listens on `http://localhost:8080`.
 ./mvnw test
 ```
 
-Covers unit tests (`CustomerServiceImplTest`, `GlobalExceptionHandlerTest`), a JDBC slice test against the real H2 schema (`JdbcCustomerRepositoryTest`, `@JdbcTest`), a web-layer slice test (`CustomerControllerTest`, `@WebMvcTest`), and a context-load smoke test (`JdbcClientDemoApplicationTests`).
+Covers unit tests (`CustomerServiceImplTest`, `GlobalExceptionHandlerTest`), a JDBC slice test against a real Postgres container (`JdbcCustomerRepositoryTest`, `@JdbcTest`), a web-layer slice test (`CustomerControllerTest`, `@WebMvcTest`), and a context-load smoke test (`JdbcClientDemoApplicationTests`).
+
+Integration tests provision Postgres via [Testcontainers](https://testcontainers.com/) (`TestcontainersConfiguration`, `@ServiceConnection`) — schema and seed data come from `src/main/resources/db/postgres/`, the same scripts used in production, so tests run against the real database engine and constraints.
 
 ## Endpoints
 
@@ -51,16 +54,6 @@ With the app running, the API is documented using [springdoc-openapi](https://sp
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Raw OpenAPI spec (JSON): `http://localhost:8080/v3/api-docs`
-
-## H2 console
-
-With the app running, open `http://localhost:8080/h2-console` and connect with:
-
-- JDBC URL: `jdbc:h2:mem:testdb`
-- User: `sa`
-- Password: *(empty)*
-
-Schema and seed data are loaded from `src/main/resources/db/schema.sql` and `db/data.sql` on startup.
 
 ## Project structure
 

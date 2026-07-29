@@ -9,16 +9,20 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.sonnesen.jdbc_client_demo.TestcontainersConfiguration;
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerAlreadyExistsWithEmailException;
 import com.sonnesen.jdbc_client_demo.customer.exception.CustomerNotFoundException;
 import com.sonnesen.jdbc_client_demo.customer.model.Customer;
 
 @JdbcTest
-@Import(JdbcCustomerRepository.class)
+@AutoConfigureTestDatabase(replace = Replace.NONE)
+@Import({ JdbcCustomerRepository.class, TestcontainersConfiguration.class })
 @ActiveProfiles("test")
 class JdbcCustomerRepositoryTest {
 
